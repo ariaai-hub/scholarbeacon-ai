@@ -1,0 +1,332 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String?
+  role           UserRole @default(STUDENT)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  studentProfile StudentProfile?
+  familyAccount  FamilyAccount?
+  subscription   Subscription?
+  applications   Application[]
+  institutionId  String?
+  institution    Institution? @relation(fields: [institutionId], references: [id])
+  isMinor        Boolean  @default(false)
+  parentId       String?
+  parentalConsent Boolean @default(false)
+}
+
+enum UserRole {
+  STUDENT
+  PARENT
+  INSTITUTION_ADMIN
+}
+
+model StudentProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  fullName            String
+  dateOfBirth         DateTime
+  currentCity         String
+  currentState        String
+  phone               String?
+
+  educationLevel      EducationLevel
+  institutionName     String?
+  gpa                 Decimal?
+  gpaScale            Int     @default(4)
+  classRank           Int?
+  standardizedTests   Json?
+  collegeCreditsEarned Int?
+  intendedMajor       String?
+  targetDegree        DegreeType?
+
+  raceEthnicity       Json?
+  gender              String?
+  nationality         String?
+  citizenshipStatus   CitizenshipType
+  stateOfResidence    String
+  zipCode             String?
+
+  householdIncomeBracket     IncomeBracket
+  financialNeedLevel         FinancialNeedLevel
+  firstGenerationCollegeStudent Boolean @default(false)
+  responsibleForContributingToFamilyIncome Boolean @default(false)
+
+  singleParentHousehold Boolean @default(false)
+  siblingInCollege      Boolean @default(false)
+  parentHighestEducation String?
+  veteranStatus         Boolean @default(false)
+  disabilityStatus      Boolean @default(false)
+  heritageTags          Json?
+  religiousAffiliation  String?
+  geographicBackground  GeographicType?
+  athleteStatus         AthleteStatus @default(NONE)
+
+  activities            Json?
+  leadershipPositions   Json?
+  communityServiceHours Int?
+  communityServiceFocus Json?
+  workExperience        Json?
+  awardsAndHonors       Json?
+  specialSkills         Json?
+
+  mostSignificantChallenge String?
+  whatToKnowAboutYou      String?
+  futureGoal              String?
+  whyNeedScholarship      String?
+  circumstancesToExplain  String?
+
+  undergraduateInstitution String?
+  undergraduateGpa         Decimal?
+  thesisTrack              Boolean @default(false)
+  researchAssistant        Boolean @default(false)
+  teachingAssistant        Boolean @default(false)
+  publications             Json?
+  yearsProfessionalExperience Int?
+  lettersOfRecommendationReady Boolean @default(false)
+  seekingFullFunding       Boolean @default(false)
+
+  countryOfCitizenship    String?
+  visaType                CitizenshipType?
+  countryOfOrigin         String?
+  hasUSCitizenSponsor     Boolean @default(false)
+  sponsorType             String?
+  englishProficiencyScore Json?
+  currentlyEmployedUS     Boolean @default(false)
+  employmentType          String?
+  homeCountryScholarshipEligibility Boolean @default(false)
+  planToReturnToHomeCountry Boolean?
+
+  hasResume                   Boolean @default(false)
+  hasUnofficialTranscript     Boolean @default(false)
+  canGetRecommendationLetters Boolean @default(false)
+  canCertifyDocuments         Boolean @default(false)
+  hasReliableComputerAndInternet Boolean @default(true)
+
+  profileCompletenessScore Int      @default(0)
+  enrichmentTags           Json?
+  lastUpdated              DateTime @updatedAt
+  createdAt                DateTime @default(now())
+}
+
+model Scholarship {
+  id            String   @id @default(cuid())
+  name          String
+  amount        Int
+  amountMax     Int?
+  deadline      DateTime
+  applicationUrl String
+  source        String
+  scrapedAt     DateTime @default(now())
+  lastVerifiedAt DateTime @default(now())
+  requiredDocs  Json?
+  essayPrompts  Json?
+
+  educationLevel   EducationLevel[]
+  citizenshipTypes CitizenshipType[]
+  gpaMin          Decimal?
+  gpaMax          Decimal?
+  majors          Json?
+  demographics    Json?
+  incomeBrackets Json?
+  gender         String?
+  ethnicity      Json?
+  stateResidency Json?
+  ageMin         Int?
+  ageMax         Int?
+  militaryAffiliation Json?
+  communityServiceRequired Boolean @default(false)
+  disabilityStatusRequired  Boolean @default(false)
+  religiousAffiliation       Json?
+
+  homeCountry         String?
+  englishProficiency  Boolean @default(false)
+  postGraduationPlans String?
+
+  canonicalUrl            String   @unique
+  nameHash               String
+  eligibilityFingerprint String
+  isArchived             Boolean  @default(false)
+  archivedAt              DateTime?
+
+  sopTags                Json?
+  isSponsored            Boolean  @default(false)
+  sponsorInstitutionId   String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  applications Application[]
+}
+
+model Application {
+  id             String            @id @default(cuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scholarshipId String
+  scholarship    Scholarship       @relation(fields: [scholarshipId], references: [id], onDelete: Cascade)
+  status        ApplicationStatus @default(SAVED)
+  appliedAt     DateTime?
+  awardedAmount Int?
+  notes         String?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  @@unique([userId, scholarshipId])
+}
+
+enum ApplicationStatus {
+  SAVED
+  APPLIED
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+}
+
+model Subscription {
+  id                   String             @id @default(cuid())
+  userId               String             @unique
+  user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stripeSubscriptionId String?
+  plan                 SubscriptionPlan   @default(FREE)
+  status               SubscriptionStatus @default(ACTIVE)
+  currentPeriodEnd     DateTime?
+  annual               Boolean            @default(false)
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+}
+
+enum SubscriptionPlan {
+  FREE
+  INDIVIDUAL_MONTHLY
+  FAMILY_MONTHLY
+  INDIVIDUAL_ANNUAL
+  FAMILY_ANNUAL
+  INSTITUTION
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  INCOMPLETE
+}
+
+model Institution {
+  id                 String   @id @default(cuid())
+  name               String
+  adminEmail         String
+  seatCount          Int      @default(0)
+  stripeCustomerId   String?
+  customBrandingUrl  String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+  users              User[]
+}
+
+model FamilyAccount {
+  id             String   @id @default(cuid())
+  parentUserId   String   @unique
+  parentUser     User     @relation(fields: [parentUserId], references: [id], onDelete: Cascade)
+  studentUserIds String[] @default([])
+  createdAt      DateTime @default(now())
+}
+
+enum EducationLevel {
+  HS_JUNIOR
+  HS_SENIOR
+  COMMUNITY_COLLEGE
+  UNDERGRAD_YEAR_1
+  UNDERGRAD_YEAR_2
+  UNDERGRAD_YEAR_3
+  UNDERGRAD_YEAR_4
+  GRAD_MASTERS
+  GRAD_PHD
+  GRAD_PROFESSIONAL
+  NON_DEGREE
+  CERTIFICATE
+}
+
+enum DegreeType {
+  BA
+  BS
+  MA
+  MS
+  PHD
+  JD
+  MD
+  MBA
+  DDS
+  PharmD
+  MFA
+  CERTIFICATE
+}
+
+enum CitizenshipType {
+  US_CITIZEN
+  PERMANENT_RESIDENT
+  F1_STUDENT
+  J1_EXCHANGE
+  H1B_WORKER
+  OPT
+  CPT
+  DACA
+  TPS
+  ASYLUM
+  REFUGEE
+  OTHER
+}
+
+enum IncomeBracket {
+  UNDER_15000
+  BRACKET_15000_30000
+  BRACKET_30000_50000
+  BRACKET_50000_75000
+  BRACKET_75000_100000
+  OVER_100000
+  DECLINE_TO_STATE
+}
+
+enum FinancialNeedLevel {
+  LOW
+  MODERATE
+  SIGNIFICANT
+  SEVERE
+}
+
+enum GeographicType {
+  RURAL
+  URBAN
+  SUBURBAN
+}
+
+enum AthleteStatus {
+  NONE
+  VARSITY
+  DIVISION_1
+  PROFESSIONAL
+}
+
+enum DemographicTag {
+  FIRST_GENERATION
+  SINGLE_PARENT
+  VETERAN
+  DISABILITY
+  RURAL
+  URBAN
+  LOW_INCOME
+  DISPLACED_WORKER
+  INCARCERATED
+  FOSTER_CARE
+}
