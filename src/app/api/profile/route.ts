@@ -1,6 +1,7 @@
 import { auth } from "@clerk/nextjs/server";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { calculateProfileCompleteness } from "@/lib/profile-completeness";
 
 // GET /api/profile
 export async function GET() {
@@ -18,10 +19,18 @@ export async function GET() {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  return NextResponse.json(user);
+  const completenessScore =
+    user.studentProfile
+      ? calculateProfileCompleteness(user.studentProfile as Parameters<typeof calculateProfileCompleteness>[0])
+      : 0;
+
+  return NextResponse.json({
+    ...user,
+    profileCompletenessScore: completenessScore,
+  });
 }
 
-// POST /api/profile
+// POST /api/profile — create or update
 export async function POST(req: NextRequest) {
   const { userId } = await auth();
   if (!userId) {
@@ -35,80 +44,79 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "User not found" }, { status: 404 });
   }
 
-  const profile = await prisma.studentProfile.create({
-    data: {
-      userId,
-      fullName: body.fullName,
-      dateOfBirth: new Date(body.dateOfBirth),
-      currentCity: body.currentCity,
-      currentState: body.currentState,
-      phone: body.phone ?? null,
-      educationLevel: body.educationLevel,
-      institutionName: body.institutionName ?? null,
-      gpa: body.gpa ?? null,
-      gpaScale: body.gpaScale ?? 4,
-      classRank: body.classRank ?? null,
-      standardizedTests: body.standardizedTests ?? null,
-      collegeCreditsEarned: body.collegeCreditsEarned ?? null,
-      intendedMajor: body.intendedMajor ?? null,
-      targetDegree: body.targetDegree ?? null,
-      raceEthnicity: body.raceEthnicity ?? null,
-      gender: body.gender ?? null,
-      nationality: body.nationality ?? null,
-      citizenshipStatus: body.citizenshipStatus,
-      stateOfResidence: body.stateOfResidence,
-      zipCode: body.zipCode ?? null,
-      householdIncomeBracket: body.householdIncomeBracket,
-      financialNeedLevel: body.financialNeedLevel,
-      firstGenerationCollegeStudent: body.firstGenerationCollegeStudent ?? false,
-      responsibleForContributingToFamilyIncome: body.responsibleForContributingToFamilyIncome ?? false,
-      singleParentHousehold: body.singleParentHousehold ?? false,
-      siblingInCollege: body.siblingInCollege ?? false,
-      parentHighestEducation: body.parentHighestEducation ?? null,
-      veteranStatus: body.veteranStatus ?? false,
-      disabilityStatus: body.disabilityStatus ?? false,
-      heritageTags: body.heritageTags ?? null,
-      religiousAffiliation: body.religiousAffiliation ?? null,
-      geographicBackground: body.geographicBackground ?? null,
-      athleteStatus: body.athleteStatus ?? "NONE",
-      activities: body.activities ?? null,
-      leadershipPositions: body.leadershipPositions ?? null,
-      communityServiceHours: body.communityServiceHours ?? null,
-      communityServiceFocus: body.communityServiceFocus ?? null,
-      workExperience: body.workExperience ?? null,
-      awardsAndHonors: body.awardsAndHonors ?? null,
-      specialSkills: body.specialSkills ?? null,
-      mostSignificantChallenge: body.mostSignificantChallenge ?? null,
-      whatToKnowAboutYou: body.whatToKnowAboutYou ?? null,
-      futureGoal: body.futureGoal ?? null,
-      whyNeedScholarship: body.whyNeedScholarship ?? null,
-      circumstancesToExplain: body.circumstancesToExplain ?? null,
-      undergraduateInstitution: body.undergraduateInstitution ?? null,
-      undergraduateGpa: body.undergraduateGpa ?? null,
-      thesisTrack: body.thesisTrack ?? false,
-      researchAssistant: body.researchAssistant ?? false,
-      teachingAssistant: body.teachingAssistant ?? false,
-      publications: body.publications ?? null,
-      yearsProfessionalExperience: body.yearsProfessionalExperience ?? null,
-      lettersOfRecommendationReady: body.lettersOfRecommendationReady ?? false,
-      seekingFullFunding: body.seekingFullFunding ?? false,
-      countryOfCitizenship: body.countryOfCitizenship ?? null,
-      visaType: body.visaType ?? null,
-      countryOfOrigin: body.countryOfOrigin ?? null,
-      hasUSCitizenSponsor: body.hasUSCitizenSponsor ?? false,
-      sponsorType: body.sponsorType ?? null,
-      englishProficiencyScore: body.englishProficiencyScore ?? null,
-      currentlyEmployedUS: body.currentlyEmployedUS ?? false,
-      employmentType: body.employmentType ?? null,
-      homeCountryScholarshipEligibility: body.homeCountryScholarshipEligibility ?? false,
-      planToReturnToHomeCountry: body.planToReturnToHomeCountry ?? null,
-      hasResume: body.hasResume ?? false,
-      hasUnofficialTranscript: body.hasUnofficialTranscript ?? false,
-      canGetRecommendationLetters: body.canGetRecommendationLetters ?? false,
-      canCertifyDocuments: body.canCertifyDocuments ?? false,
-      hasReliableComputerAndInternet: body.hasReliableComputerAndInternet ?? true,
-    },
+  // Build profile data, stripping unknown fields
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const profileData: any = {};
+
+  const scalarFields = [
+    "fullName", "dateOfBirth", "currentCity", "currentState", "phone",
+    "educationLevel", "institutionName", "gpa", "gpaScale", "classRank",
+    "standardizedTests", "collegeCreditsEarned", "intendedMajor", "targetDegree",
+    "raceEthnicity", "gender", "nationality", "citizenshipStatus",
+    "stateOfResidence", "zipCode", "householdIncomeBracket", "financialNeedLevel",
+    "firstGenerationCollegeStudent", "responsibleForContributingToFamilyIncome",
+    "singleParentHousehold", "siblingInCollege", "parentHighestEducation",
+    "veteranStatus", "disabilityStatus", "heritageTags", "religiousAffiliation",
+    "geographicBackground", "athleteStatus",
+    "activities", "leadershipPositions", "communityServiceHours",
+    "communityServiceFocus", "workExperience", "awardsAndHonors", "specialSkills",
+    "mostSignificantChallenge", "whatToKnowAboutYou", "futureGoal",
+    "whyNeedScholarship", "circumstancesToExplain",
+    "undergraduateInstitution", "undergraduateGpa", "thesisTrack",
+    "researchAssistant", "teachingAssistant", "publications",
+    "yearsProfessionalExperience", "lettersOfRecommendationReady", "seekingFullFunding",
+    "countryOfCitizenship", "visaType", "countryOfOrigin", "hasUSCitizenSponsor",
+    "sponsorType", "englishProficiencyScore", "currentlyEmployedUS",
+    "employmentType", "homeCountryScholarshipEligibility", "planToReturnToHomeCountry",
+    "hasResume", "hasUnofficialTranscript", "canGetRecommendationLetters",
+    "canCertifyDocuments", "hasReliableComputerAndInternet",
+  ];
+
+  for (const field of scalarFields) {
+    if (field in body) {
+      profileData[field] = body[field];
+    }
+  }
+
+  // Handle date conversion
+  if (profileData.dateOfBirth) {
+    profileData.dateOfBirth = new Date(profileData.dateOfBirth);
+  }
+  if (profileData.undergraduateGpa) {
+    profileData.undergraduateGpa = Number(profileData.undergraduateGpa);
+  }
+  if (profileData.gpa) {
+    profileData.gpa = Number(profileData.gpa);
+  }
+  if (profileData.communityServiceHours) {
+    profileData.communityServiceHours = Number(profileData.communityServiceHours);
+  }
+  if (profileData.yearsProfessionalExperience) {
+    profileData.yearsProfessionalExperience = Number(profileData.yearsProfessionalExperience);
+  }
+
+  const existingProfile = await prisma.studentProfile.findUnique({
+    where: { userId },
   });
 
-  return NextResponse.json(profile, { status: 201 });
+  let profile;
+  if (existingProfile) {
+    profile = await prisma.studentProfile.update({
+      where: { userId },
+      data: profileData,
+    });
+  } else {
+    profile = await prisma.studentProfile.create({
+      data: { userId, ...profileData },
+    });
+  }
+
+  // Recalculate completeness
+  const completenessScore = calculateProfileCompleteness(profile as Parameters<typeof calculateProfileCompleteness>[0]);
+  profile = await prisma.studentProfile.update({
+    where: { userId },
+    data: { profileCompletenessScore: completenessScore },
+  });
+
+  return NextResponse.json(profile, { status: existingProfile ? 200 : 201 });
 }

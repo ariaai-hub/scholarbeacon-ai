@@ -1,28 +1,11 @@
 import Link from "next/link";
+import { SiteNav } from "@/components/site-nav";
 
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-white">
       {/* Nav */}
-      <nav className="flex items-center justify-between max-w-7xl mx-auto px-6 py-4">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-            <span className="text-white font-bold text-sm">SB</span>
-          </div>
-          <span className="font-bold text-xl text-slate-900">ScholarBeacon</span>
-        </div>
-        <div className="flex items-center gap-6">
-          <Link href="/sign-in" className="text-sm font-medium text-slate-600 hover:text-slate-900">
-            Sign In
-          </Link>
-          <Link
-            href="/sign-up"
-            className="bg-indigo-600 text-white text-sm font-medium px-4 py-2 rounded-lg hover:bg-indigo-700 transition"
-          >
-            Get Started Free
-          </Link>
-        </div>
-      </nav>
+      <SiteNav />
 
       {/* Hero */}
       <section className="max-w-7xl mx-auto px-6 py-24 text-center">
