@@ -13,6 +13,7 @@ import {
   scrapeAllStates,
   scrapeEasyAndLocal,
   scrapeFinalBatch,
+  scrapeOverflow,
 } from "./src/lib/scrapers/index";
 import { upsertScholarship } from "./src/lib/scrapers/index";
 
@@ -33,6 +34,7 @@ async function main() {
     { name: "All 50 States Programs", fn: scrapeAllStates },
     { name: "Easy Apply & Local", fn: scrapeEasyAndLocal },
     { name: "Final Batch (Careers/Social Impact)", fn: scrapeFinalBatch },
+    { name: "Overflow Batch", fn: scrapeOverflow },
   ];
 
   let grandTotal = 0;
