@@ -12,6 +12,7 @@ export { scrapeSTEMTradeIntl } from "./stem";
 export { scrapePrivateFoundations } from "./private";
 export { scrapeAllStates } from "./states";
 export { scrapeEasyAndLocal } from "./additional";
+export { scrapeFinalBatch } from "./finalbatch";
 
 import { scrapeCampusReelAll } from "./campusreel";
 import { scrapeBrowardMomCollective } from "./browardmomcollective";

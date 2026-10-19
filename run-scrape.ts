@@ -12,6 +12,7 @@ import {
   scrapePrivateFoundations,
   scrapeAllStates,
   scrapeEasyAndLocal,
+  scrapeFinalBatch,
 } from "./src/lib/scrapers/index";
 import { upsertScholarship } from "./src/lib/scrapers/index";
 
@@ -31,6 +32,7 @@ async function main() {
     { name: "Private Foundations", fn: scrapePrivateFoundations },
     { name: "All 50 States Programs", fn: scrapeAllStates },
     { name: "Easy Apply & Local", fn: scrapeEasyAndLocal },
+    { name: "Final Batch (Careers/Social Impact)", fn: scrapeFinalBatch },
   ];
 
   let grandTotal = 0;
