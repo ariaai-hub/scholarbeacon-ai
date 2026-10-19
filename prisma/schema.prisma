@@ -165,10 +165,44 @@ model Scholarship {
   isSponsored            Boolean  @default(false)
   sponsorInstitutionId   String?
 
+  // New discovery fields
+  ethnicityNew         String[] @default([])
+  genderNew            String[] @default([])
+  minGpa               Float?
+  maxIncome            Int?
+  stateResidencyNew    String[] @default([])
+  county               String[] @default([])
+  gradYears            Int[]    @default([])
+  majorsNew            String[] @default([])
+  minCommunityHours    Int?
+  dualEnrollmentOk      Boolean?
+  scrapedFrom          String   @default("manual")
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   applications Application[]
+}
+
+// Standalone student profile for discovery engine (no auth required)
+model DiscoveryProfile {
+  id             String   @id @default(cuid())
+  name           String   @default("Shomari Jr.")
+  state          String   @default("FL")
+  county         String   @default("Broward")
+  city           String   @default("Miramar")
+  school         String   @default("Everglades High School")
+  gradYear       Int      @default(2027)
+  ethnicity      String   @default("African American")
+  gender         String   @default("Male")
+  gpa            Float    @default(3.53)
+  weightedGpa    Float    @default(4.98)
+  satScore       Int      @default(1320)
+  income         Int      @default(50000)
+  majors         String   @default("Business,Finance,Entrepreneurship")
+  communityHours Int      @default(255)
+  dualEnrollment Boolean  @default(true)
+  updatedAt      DateTime @updatedAt
 }
 
 model Application {
