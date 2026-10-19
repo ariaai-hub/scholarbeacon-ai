@@ -179,17 +179,6 @@ const FOCUSED: Omit<ScrapedScholarship, "scrapedFrom">[] = [
     county: ["Broward"],
   },
   {
-    name: "NextEra Energy Scholarship (SECME Students)",
-    url: "https://browardedfoundation.org/apply/",
-    amount: 20000,
-    deadline: null,
-    description:
-      "10 awards up to $20,000 for graduating seniors with SECME participation. For STEM fields.",
-    stateResidency: ["FL"],
-    county: ["Broward"],
-  },
-  {
-    name: "City of Miramar Community Scholarship",
     url: "https://www.miramarfl.gov/",
     amount: 1000,
     deadline: "2027-04-01",
