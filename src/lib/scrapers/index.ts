@@ -1,6 +1,10 @@
-export { scrapeCampusReel, scrapeCampusReelAll } from "./campusreel";
+export { scrapeCampusReel, scrapeCampusReelAll, scrapeCampusReelFlorida } from "./campusreel";
 export { scrapeBrowardMomCollective } from "./browardmomcollective";
 export { scrapeScholarshipsAndGrants } from "./scholarshipsandgrants";
+export { scrapeScholarships360 } from "./scholarships360";
+export { scrapeNationalScholarships } from "./national";
+export { scrapeFloridaScholarships } from "./florida";
+export { scrapeBrowardEdFoundation } from "./browardfoundation";
 
 import { scrapeCampusReelAll } from "./campusreel";
 import { scrapeBrowardMomCollective } from "./browardmomcollective";
@@ -42,7 +46,7 @@ export async function upsertScholarship(
       amountMax: s.amountMax ?? null,
       deadline: s.deadline ? new Date(s.deadline) : new Date(Date.now() + 90 * 24 * 60 * 60 * 1000),
       applicationUrl: s.url,
-      source: s.scrapedFrom,
+      source: s.scrapedFrom || "manual",
       scrapedFrom: s.scrapedFrom,
       canonicalUrl: s.url,
       nameHash: s.name.toLowerCase().replace(/\s+/g, ""),

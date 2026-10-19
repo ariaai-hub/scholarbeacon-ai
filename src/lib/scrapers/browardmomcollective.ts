@@ -7,7 +7,7 @@ export interface ScrapedScholarship {
   deadline: string | null;
   description: string;
   url: string;
-  scrapedFrom: "browardmomcollective";
+  scrapedFrom: string;
   stateResidency: string[];
   county: string[];
 }
@@ -41,69 +41,134 @@ function parseDeadline(text: string | null): string | null {
   return null;
 }
 
+// Known scholarship links from the BrowardMomCollective curated article
+const KNOWN_SCHOLARSHIPS: Omit<ScrapedScholarship, "scrapedFrom">[] = [
+  {
+    name: "George Snow Scholarship Fund",
+    url: "https://scholarship.org/browardscholarships/",
+    amount: 0,
+    amountMax: 0,
+    deadline: null,
+    description:
+      "100+ scholarship awards for Broward County seniors demonstrating financial need. No minimum GPA or SAT/ACT required. Expanded to Broward County in 2026.",
+    stateResidency: ["FL"],
+    county: ["Broward"],
+  },
+  {
+    name: "Broward Education Foundation Scholarships",
+    url: "https://browardedfoundation.org/apply/",
+    amount: 1000,
+    amountMax: 25000,
+    deadline: null,
+    description:
+      "Hundreds of scholarships for Broward County Public Schools graduating seniors. Merit-based and need-based awards from $1,000 to over $25,000.",
+    stateResidency: ["FL"],
+    county: ["Broward"],
+  },
+  {
+    name: "Community Foundation of Broward Scholarships",
+    url: "https://www.cfbroward.org/receive/apply-for-scholarships",
+    amount: 0,
+    amountMax: 0,
+    deadline: null,
+    description:
+      "Multiple scholarship opportunities for students at different stages. Administered directly and in partnership with Broward Education Foundation.",
+    stateResidency: ["FL"],
+    county: ["Broward"],
+  },
+  {
+    name: "Broward College Scholarships",
+    url: "https://www.broward.edu/admissions/financial-aid/scholarships/",
+    amount: 0,
+    amountMax: 0,
+    deadline: null,
+    description:
+      "Scholarships for eligible Broward College students based on financial need, academic achievement, and program of study.",
+    stateResidency: ["FL"],
+    county: ["Broward"],
+  },
+  {
+    name: "Elks Most Valuable Student Scholarship",
+    url: "https://www.elks.org/scholars/scholarships/mvs.cfm",
+    amount: 1000,
+    amountMax: 15000,
+    deadline: null,
+    description:
+      "National scholarship for high school seniors based on academics, leadership, and service. No relation to Elks required.",
+    stateResidency: [],
+    county: [],
+  },
+  {
+    name: "Florida Bright Futures Scholarship Program",
+    url: "https://www.floridastudentfinancialaidsg.org/SAPBFMAIN/SAPBFMAIN",
+    amount: 0,
+    amountMax: 0,
+    deadline: null,
+    description:
+      "Florida state scholarship. Shomari Jr. is eligible for 100% Bright Futures (FAS tier). Covers 75-100% of tuition. Award varies by tier.",
+    stateResidency: ["FL"],
+    county: [],
+  },
+  {
+    name: "Florida Elks Scholarships",
+    url: "https://floridaelks.org/scholarships",
+    amount: 0,
+    amountMax: 0,
+    deadline: null,
+    description: "Scholarship opportunities for Florida students through the Florida State Elks Association.",
+    stateResidency: ["FL"],
+    county: [],
+  },
+];
+
 export async function scrapeBrowardMomCollective(): Promise<ScrapedScholarship[]> {
-  const url = "https://browardmomcollective.com/community-resources/broward-county-scholarships/";
-  let html: string;
+  const results: ScrapedScholarship[] = KNOWN_SCHOLARSHIPS.map((s) => ({
+    ...s,
+    scrapedFrom: "browardmomcollective",
+  }));
+
+  // Try to fetch article page for additional links
   try {
-    const res = await fetch(url, {
-      headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-      },
-      signal: AbortSignal.timeout(15000),
-    });
+    const res = await fetch(
+      "https://browardmomcollective.com/community-resources/broward-county-scholarships/",
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+        signal: AbortSignal.timeout(15000),
+      }
+    );
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    html = await res.text();
-  } catch (err) {
-    console.error("BrowardMomCollective fetch error:", err);
-    return [];
-  }
+    const html = await res.text();
+    const $ = load(html);
 
-  const $ = load(html);
-  const results: ScrapedScholarship[] = [];
-
-  // Look for scholarship entries — typically in list items, cards, or post entries
-  const items = $("li, article, .scholarship, .entry, [class*='scholarship'], [class*='resource']");
-
-  items.each((_, el) => {
-    try {
-      const nameEl = $(el).find("h2, h3, h4, a").first();
-      const name = nameEl.text().trim();
-
-      const amountEl = $(el).find("[class*='amount'], [class*='award'], [class*='value'], $");
-      const amountText = amountEl.text().trim();
-      const { amount, amountMax } = parseAmount(amountText);
-
-      const deadlineEl = $(el).find("[class*='deadline'], [class*='due'], time");
-      const deadlineText = deadlineEl.first().text().trim();
-      const deadline = parseDeadline(deadlineText);
-
-      const descEl = $(el).find("p").first();
-      const description = descEl.text().trim().slice(0, 500);
-
-      const linkEl = $(el).find("a[href]").first();
-      const relativeHref = linkEl.attr("href") || "";
-      const url = relativeHref.startsWith("http")
-        ? relativeHref
-        : `https://browardmomcollective.com${relativeHref}`;
-
-      if (name && name.length > 3) {
+    $("a[href]").each((_, el) => {
+      const href = $(el).attr("href") || "";
+      const text = $(el).text().trim();
+      if (
+        href.startsWith("http") &&
+        (href.includes("scholarship") ||
+          href.includes("financial-aid") ||
+          href.includes("fafsa") ||
+          href.includes("brightfutures")) &&
+        !results.some((r) => r.url === href)
+      ) {
         results.push({
-          name: name.slice(0, 200),
-          amount,
-          amountMax,
-          deadline,
-          description: description.slice(0, 1000),
-          url,
+          name: text.slice(0, 200) || "Broward Scholarship Link",
+          amount: 0,
+          deadline: null,
+          description: "Found via BrowardMomCollective article.",
+          url: href,
           scrapedFrom: "browardmomcollective",
-          stateResidency: ["FL"],
-          county: ["Broward"],
+          stateResidency: [],
+          county: [],
         });
       }
-    } catch {
-      // skip
-    }
-  });
+    });
+  } catch (err) {
+    console.warn("BrowardMomCollective article fetch failed:", err);
+  }
 
   return results;
 }

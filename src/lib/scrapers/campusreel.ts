@@ -1,4 +1,3 @@
-import * as cheerio from "cheerio";
 import { load } from "cheerio";
 
 export interface ScrapedScholarship {
@@ -8,7 +7,7 @@ export interface ScrapedScholarship {
   deadline: string | null;
   description: string;
   url: string;
-  scrapedFrom: "campusreel";
+  scrapedFrom: string;
   stateResidency: string[];
   county: string[];
 }
@@ -28,7 +27,6 @@ function parseAmount(text: string | null): { amount: number; amountMax?: number 
 
 function parseDeadline(text: string | null): string | null {
   if (!text) return null;
-  // Try common date formats
   const dateMatch = text.match(
     /(\w+\s+\d{1,2},?\s+\d{4})|(\d{1,2}\/\d{1,2}\/\d{2,4})|(\d{4}-\d{2}-\d{2})/
   );
@@ -43,92 +41,109 @@ function parseDeadline(text: string | null): string | null {
   return null;
 }
 
-export async function scrapeCampusReel(
-  page = 1
-): Promise<ScrapedScholarship[]> {
-  const url = `https://www.campusreel.org/scholarships/location/florida-scholarships/broward-county?page=${page}`;
+// CampusReel has multiple FL county pages
+const FL_COUNTIES = [
+  "broward-county",
+  "miami-dade-county",
+  "palm-beach-county",
+  "orange-county",
+  "hillsborough-county",
+  "pinellas-county",
+  "duval-county",
+];
+
+export async function scrapeCampusReel(page = 1, county = "broward-county"): Promise<ScrapedScholarship[]> {
+  const url = `https://www.campusreel.org/scholarships/location/florida-scholarships/${county}?page=${page}`;
   let html: string;
   try {
     const res = await fetch(url, {
       headers: {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
       },
       signal: AbortSignal.timeout(15000),
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) return [];
     html = await res.text();
   } catch (err) {
-    console.error(`CampusReel fetch error (page ${page}):`, err);
+    console.error(`CampusReel fetch error (${county} page ${page}):`, err);
     return [];
   }
 
   const $ = load(html);
   const results: ScrapedScholarship[] = [];
 
-  // Adapt selector based on actual page structure
-  // Common patterns for scholarship list pages
-  const items = $("[class*='scholarship'], [class*='card'], article, .listing-item");
-
-  if (items.length === 0) {
-    // Try generic paragraph/div scanning
-    $("div, p, li").each((_, el) => {
-      const text = $(el).text().trim();
-      // Look for patterns like "$5,000" and scholarship names nearby
-    });
-  }
-
-  items.each((_, el) => {
+  // The page has scholarship entries as anchor tags with URLs containing /scholarship/
+  $("a[href*='/scholarship/']").each((_, el) => {
     try {
-      const nameEl = $(el).find("h2, h3, h4, [class*='title'], [class*='name']").first();
-      const name = nameEl.text().trim();
+      const $el = $(el);
+      const href = $el.attr("href") || "";
+      const fullUrl = href.startsWith("http")
+        ? href
+        : `https://www.campusreel.org${href}`;
 
-      const amountEl = $(el).find("[class*='amount'], [class*='award'], [class*='value']").first();
-      const amountText = amountEl.text().trim();
-      const { amount, amountMax } = parseAmount(amountText);
+      const name = $el.text().trim().replace(/\s+/g, " ");
+      if (!name || name.length < 3) return;
 
-      const deadlineEl = $(el).find("[class*='deadline'], [class*='due'], time").first();
-      const deadlineText = deadlineEl.text().trim();
-      const deadline = parseDeadline(deadlineText);
+      // Get description from the parent container's next sibling or surrounding text
+      const parent = $el.parent();
+      const grandParent = parent.parent();
+      let description = "";
+      parent.nextAll("p, div").each((_, sib) => {
+        const txt = $(sib).text().trim();
+        if (txt.length > 50 && !txt.startsWith("$") && !txt.toLowerCase().includes("deadline")) {
+          description = txt.slice(0, 500);
+          return false;
+        }
+      });
 
-      const descEl = $(el).find("p, [class*='description'], [class*='summary']").first();
-      const description = descEl.text().trim().slice(0, 500);
+      // Amount is often in the same text block — look for $ amounts nearby
+      const parentText = parent.text();
+      const amountMatch = parentText.match(/\$[\d,]+/);
+      const { amount, amountMax } = parseAmount(amountMatch?.[0] ?? null);
 
-      const linkEl = $(el).find("a[href]").first();
-      const relativeHref = linkEl.attr("href") || "";
-      const url = relativeHref.startsWith("http")
-        ? relativeHref
-        : `https://www.campusreel.org${relativeHref}`;
+      // Deadline
+      let deadline: string | null = null;
+      parent.parents().eq(0).nextAll("p, div, span").each((_, sib) => {
+        const txt = $(sib).text();
+        if (txt.toLowerCase().includes("deadline")) {
+          deadline = parseDeadline(txt);
+          return false;
+        }
+      });
 
-      if (name && url && url.includes(".")) {
-        results.push({
-          name: name.slice(0, 200),
-          amount,
-          amountMax,
-          deadline,
-          description: description.slice(0, 1000),
-          url,
-          scrapedFrom: "campusreel",
-          stateResidency: ["FL"],
-          county: ["Broward"],
-        });
-      }
+      results.push({
+        name: name.slice(0, 200),
+        amount,
+        amountMax,
+        deadline,
+        description: description || "See scholarship page for details.",
+        url: fullUrl,
+        scrapedFrom: "campusreel",
+        stateResidency: ["FL"],
+        county: [county.replace("-county", "").replace(/-/g, " ")],
+      });
     } catch {
-      // skip malformed item
+      // skip
     }
   });
 
   return results;
 }
 
-/**
- * Scrape multiple pages of CampusReel
- */
 export async function scrapeCampusReelAll(pages = 3): Promise<ScrapedScholarship[]> {
   const all: ScrapedScholarship[] = [];
   for (let i = 1; i <= pages; i++) {
-    const results = await scrapeCampusReel(i);
+    const results = await scrapeCampusReel(i, "broward-county");
     if (results.length === 0) break;
+    all.push(...results);
+  }
+  return all;
+}
+
+export async function scrapeCampusReelFlorida(): Promise<ScrapedScholarship[]> {
+  const all: ScrapedScholarship[] = [];
+  for (const county of FL_COUNTIES) {
+    const results = await scrapeCampusReelAll(3);
     all.push(...results);
   }
   return all;
