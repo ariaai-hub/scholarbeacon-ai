@@ -5,6 +5,9 @@ import {
   scrapeBrowardMomCollective,
   scrapeBrowardEdFoundation,
   scrapeFloridaScholarships,
+  scrapeHBCUScholarships,
+  scrapeCorporateScholarships,
+  scrapeOrganizationalScholarships,
 } from "./src/lib/scrapers/index";
 import { upsertScholarship } from "./src/lib/scrapers/index";
 
@@ -17,8 +20,12 @@ async function main() {
     { name: "BrowardMomCollective", fn: scrapeBrowardMomCollective },
     { name: "Broward Ed Foundation", fn: scrapeBrowardEdFoundation },
     { name: "Florida Programs & Universities", fn: scrapeFloridaScholarships },
+    { name: "HBCU Scholarships", fn: scrapeHBCUScholarships },
+    { name: "Corporate Scholarships", fn: scrapeCorporateScholarships },
+    { name: "Organizational Scholarships", fn: scrapeOrganizationalScholarships },
   ];
 
+  let grandTotal = 0;
   for (const src of sources) {
     console.log(`Scraping ${src.name}...`);
     try {
@@ -26,7 +33,7 @@ async function main() {
       let count = 0;
       for (const s of items) {
         const isNew = await upsertScholarship(prisma, s);
-        if (isNew) count++;
+        if (isNew) { count++; grandTotal++; }
       }
       console.log(`  Added ${count} new (${items.length} found)`);
     } catch (e) {

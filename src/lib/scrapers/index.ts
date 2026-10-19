@@ -5,6 +5,9 @@ export { scrapeScholarships360 } from "./scholarships360";
 export { scrapeNationalScholarships } from "./national";
 export { scrapeFloridaScholarships } from "./florida";
 export { scrapeBrowardEdFoundation } from "./browardfoundation";
+export { scrapeHBCUScholarships } from "./hbcus";
+export { scrapeCorporateScholarships } from "./corporate";
+export { scrapeOrganizationalScholarships } from "./organizational";
 
 import { scrapeCampusReelAll } from "./campusreel";
 import { scrapeBrowardMomCollective } from "./browardmomcollective";
