@@ -2,6 +2,8 @@ import { auth } from "@clerk/nextjs/server";
 import { notFound, redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
+import { saveScholarshipAction, applyScholarshipAction } from "@/actions/scholarship-actions";
+import { EssayDraftButton } from "@/components/scholarship/EssayDraftButton";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -48,37 +50,10 @@ export default async function ScholarshipDetailPage({ params }: Params) {
   const essayPrompts = (scholarship.essayPrompts as string[] | null) || [];
   const isExpired = scholarship.deadline < now;
 
-  // Determine which docs the student likely has
   const studentDocStatus = {
     hasResume: profile?.hasResume ?? false,
     hasTranscript: profile?.hasUnofficialTranscript ?? false,
     hasRecommendations: profile?.canGetRecommendationLetters ?? false,
-  };
-
-  const handleSave = async () => {
-    "use server";
-    const { prisma: db } = await import("@/lib/prisma");
-    const { auth: getAuth } = await import("@clerk/nextjs/server");
-    const { userId: uid } = await getAuth();
-    if (!uid) return;
-    await db.application.upsert({
-      where: { userId_scholarshipId: { userId: uid, scholarshipId: id } },
-      create: { userId: uid, scholarshipId: id, status: "SAVED" },
-      update: { status: "SAVED" },
-    });
-  };
-
-  const handleApply = async () => {
-    "use server";
-    const { prisma: db } = await import("@/lib/prisma");
-    const { auth: getAuth } = await import("@clerk/nextjs/server");
-    const { userId: uid } = await getAuth();
-    if (!uid) return;
-    await db.application.upsert({
-      where: { userId_scholarshipId: { userId: uid, scholarshipId: id } },
-      create: { userId: uid, scholarshipId: id, status: "APPLIED", appliedAt: new Date() },
-      update: { status: "APPLIED", appliedAt: new Date() },
-    });
   };
 
   return (
@@ -128,7 +103,7 @@ export default async function ScholarshipDetailPage({ params }: Params) {
               ))}
             </div>
 
-            {/* Deadline */}
+            {/* Deadline info */}
             <div className="bg-slate-50 rounded-lg p-4 mb-5">
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -160,7 +135,10 @@ export default async function ScholarshipDetailPage({ params }: Params) {
               >
                 Apply Now
               </a>
-              <form action={handleSave}>
+              <form action={async () => {
+                "use server";
+                await saveScholarshipAction(id);
+              }}>
                 <button
                   type="submit"
                   className={`font-medium px-4 py-2.5 rounded-xl border transition ${
@@ -269,7 +247,7 @@ export default async function ScholarshipDetailPage({ params }: Params) {
           {/* Why you match */}
           <div className="bg-indigo-50 rounded-2xl border border-indigo-100 p-5">
             <h3 className="font-semibold text-indigo-900 mb-3">Why You Match</h3>
-            {profile && (
+            {profile ? (
               <div className="space-y-2 text-sm text-indigo-800">
                 {scholarship.educationLevel.includes(profile.educationLevel) && (
                   <div className="flex items-start gap-2">
@@ -290,8 +268,7 @@ export default async function ScholarshipDetailPage({ params }: Params) {
                   </div>
                 )}
               </div>
-            )}
-            {!profile && (
+            ) : (
               <p className="text-sm text-indigo-700">
                 Complete your profile to see why you match.
               </p>
@@ -308,27 +285,7 @@ export default async function ScholarshipDetailPage({ params }: Params) {
               >
                 <span>📋</span> Pre-fill My Application
               </a>
-              <form action={async () => {
-                // Essay generation would be triggered via API
-              }}>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 w-full text-sm text-slate-700 hover:text-indigo-600 py-1.5 transition"
-                  onClick={async () => {
-                    const res = await fetch("/api/essay/generate", {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ scholarshipId: id, promptType: "personal_statement" }),
-                    });
-                    if (res.ok) {
-                      const data = await res.json();
-                      alert("Essay generated! Check your dashboard for the draft.");
-                    }
-                  }}
-                >
-                  <span>✍️</span> Draft My Essay
-                </button>
-              </form>
+              <EssayDraftButton scholarshipId={id} />
             </div>
           </div>
 

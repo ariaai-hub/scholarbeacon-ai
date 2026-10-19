@@ -1,11 +1,11 @@
-'use client';
+"use client";
 
-import { ClerkProvider } from '@clerk/nextjs';
+import { ClerkProvider } from "@clerk/nextjs";
 
 export function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <ClerkProvider>
-      {children}
-    </ClerkProvider>
-  );
+  const publishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  if (!publishableKey) {
+    return <>{children}</>;
+  }
+  return <ClerkProvider>{children}</ClerkProvider>;
 }
