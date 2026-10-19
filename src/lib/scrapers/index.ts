@@ -8,6 +8,7 @@ export { scrapeBrowardEdFoundation } from "./browardfoundation";
 export { scrapeHBCUScholarships } from "./hbcus";
 export { scrapeCorporateScholarships } from "./corporate";
 export { scrapeOrganizationalScholarships } from "./organizational";
+export { scrapeSTEMTradeIntl } from "./stem";
 
 import { scrapeCampusReelAll } from "./campusreel";
 import { scrapeBrowardMomCollective } from "./browardmomcollective";

@@ -8,6 +8,7 @@ import {
   scrapeHBCUScholarships,
   scrapeCorporateScholarships,
   scrapeOrganizationalScholarships,
+  scrapeSTEMTradeIntl,
 } from "./src/lib/scrapers/index";
 import { upsertScholarship } from "./src/lib/scrapers/index";
 
@@ -23,6 +24,7 @@ async function main() {
     { name: "HBCU Scholarships", fn: scrapeHBCUScholarships },
     { name: "Corporate Scholarships", fn: scrapeCorporateScholarships },
     { name: "Organizational Scholarships", fn: scrapeOrganizationalScholarships },
+    { name: "STEM / Trade / Study Abroad", fn: scrapeSTEMTradeIntl },
   ];
 
   let grandTotal = 0;
