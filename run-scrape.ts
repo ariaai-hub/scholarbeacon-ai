@@ -10,6 +10,7 @@ import {
   scrapeOrganizationalScholarships,
   scrapeSTEMTradeIntl,
   scrapePrivateFoundations,
+  scrapeAllStates,
 } from "./src/lib/scrapers/index";
 import { upsertScholarship } from "./src/lib/scrapers/index";
 
@@ -27,6 +28,7 @@ async function main() {
     { name: "Organizational Scholarships", fn: scrapeOrganizationalScholarships },
     { name: "STEM / Trade / Study Abroad", fn: scrapeSTEMTradeIntl },
     { name: "Private Foundations", fn: scrapePrivateFoundations },
+    { name: "All 50 States Programs", fn: scrapeAllStates },
   ];
 
   let grandTotal = 0;

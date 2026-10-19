@@ -10,6 +10,7 @@ export { scrapeCorporateScholarships } from "./corporate";
 export { scrapeOrganizationalScholarships } from "./organizational";
 export { scrapeSTEMTradeIntl } from "./stem";
 export { scrapePrivateFoundations } from "./private";
+export { scrapeAllStates } from "./states";
 
 import { scrapeCampusReelAll } from "./campusreel";
 import { scrapeBrowardMomCollective } from "./browardmomcollective";
