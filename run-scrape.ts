@@ -11,6 +11,7 @@ import {
   scrapeSTEMTradeIntl,
   scrapePrivateFoundations,
   scrapeAllStates,
+  scrapeEasyAndLocal,
 } from "./src/lib/scrapers/index";
 import { upsertScholarship } from "./src/lib/scrapers/index";
 
@@ -29,6 +30,7 @@ async function main() {
     { name: "STEM / Trade / Study Abroad", fn: scrapeSTEMTradeIntl },
     { name: "Private Foundations", fn: scrapePrivateFoundations },
     { name: "All 50 States Programs", fn: scrapeAllStates },
+    { name: "Easy Apply & Local", fn: scrapeEasyAndLocal },
   ];
 
   let grandTotal = 0;

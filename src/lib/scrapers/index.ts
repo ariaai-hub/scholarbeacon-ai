@@ -11,6 +11,7 @@ export { scrapeOrganizationalScholarships } from "./organizational";
 export { scrapeSTEMTradeIntl } from "./stem";
 export { scrapePrivateFoundations } from "./private";
 export { scrapeAllStates } from "./states";
+export { scrapeEasyAndLocal } from "./additional";
 
 import { scrapeCampusReelAll } from "./campusreel";
 import { scrapeBrowardMomCollective } from "./browardmomcollective";
