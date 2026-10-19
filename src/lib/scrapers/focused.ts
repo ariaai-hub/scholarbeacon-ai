@@ -179,6 +179,7 @@ const FOCUSED: Omit<ScrapedScholarship, "scrapedFrom">[] = [
     county: ["Broward"],
   },
   {
+    name: "City of Miramar Community Scholarship",
     url: "https://www.miramarfl.gov/",
     amount: 1000,
     deadline: "2027-04-01",
