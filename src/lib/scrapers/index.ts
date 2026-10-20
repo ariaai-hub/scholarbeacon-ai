@@ -1,4 +1,6 @@
-export { scrapeFocused } from "./focused";
+export { scrapeApplicable } from "./applicable";
+export { scrapeBatch2 } from "./batch2";
+export { scrapeBatch3 } from "./batch3";
 
 import { scrapeCampusReelAll } from "./campusreel";
 import { scrapeBrowardMomCollective } from "./browardmomcollective";
