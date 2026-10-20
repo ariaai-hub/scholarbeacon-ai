@@ -2,7 +2,7 @@ import { clerkMiddleware } from "@clerk/nextjs/server";
 import { NextResponse } from "next/server";
 
 const isPublicRoute = (path: string) => {
-  const publicRoutes = ["/", "/sign-in", "/sign-up", "/api/webhooks/stripe"];
+  const publicRoutes = ["/", "/sign-in", "/sign-up", "/son", "/son/dashboard", "/son/profile", "/api/webhooks/stripe"];
   return publicRoutes.some((route) => path.startsWith(route));
 };
 
