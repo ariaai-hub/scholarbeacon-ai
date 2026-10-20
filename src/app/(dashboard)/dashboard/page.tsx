@@ -5,7 +5,13 @@ import { calculateProfileCompleteness } from "@/lib/profile-completeness";
 import Link from "next/link";
 
 export default async function DashboardPage() {
-  const { userId } = await auth();
+  let userId: string | null = null;
+  try {
+    const session = await auth();
+    userId = session?.userId ?? null;
+  } catch {
+    // Clerk unavailable — redirect to sign-in
+  }
   if (!userId) {
     redirect("/sign-in");
   }
