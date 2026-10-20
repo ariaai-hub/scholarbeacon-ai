@@ -45,7 +45,7 @@ export default function PersonalDashboard() {
     setStats((s) => ({ ...s, loading: true }));
     try {
       const [prioritizedRes, countRes] = await Promise.all([
-        fetch("/api/scholarships/prioritized?limit=20"),
+        fetch("/api/scholarships/prioritized?limit=600"),
         fetch("/api/scholarships?limit=1"),
       ]);
       const prioritized = await prioritizedRes.json();
@@ -62,7 +62,7 @@ export default function PersonalDashboard() {
 
       setStats({
         totalScraped: (countData.scholarships?.total ?? 0) || allScholarships.length,
-        totalEligible: allScholarships.length,
+        totalEligible: eligible.length,
         totalPotentialAward: totalAward,
         loading: false,
         scraping: false,
@@ -107,8 +107,8 @@ export default function PersonalDashboard() {
       <div className="bg-indigo-600 text-white px-6 py-4">
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-bold">ScholarSon</h1>
-            <p className="text-indigo-200 text-sm">Scholarship Discovery Engine</p>
+            <h1 className="text-xl font-bold">Shomari Jr.'s Scholarships</h1>
+            <p className="text-indigo-200 text-sm">536 matches · Sorted by eligibility & deadline</p>
           </div>
           <div className="flex gap-3">
             <button
@@ -169,7 +169,7 @@ export default function PersonalDashboard() {
         <div className="bg-white rounded-xl border border-slate-200 overflow-hidden">
           <div className="px-5 py-4 border-b border-slate-100">
             <h2 className="text-lg font-semibold text-slate-900">
-              Top {scholarships.length} Prioritized Scholarships
+              All {scholarships.length} Scholarships for Shomari Jr.
             </h2>
             <p className="text-slate-500 text-sm">
               Sorted by match score × award amount × deadline urgency
